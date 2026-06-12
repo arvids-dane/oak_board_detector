@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oak Board Detector - Image Analysis & CNC Alignment</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Oak Board Detector & CNC Alignment</h1>
+            <p>Real-time image analysis with contour detection and toolpath alignment</p>
+        </header>
+
+        <div class="main-content">
+            <!-- Top Left: Camera Feed -->
+            <div class="panel top-left">
+                <h3>Live Camera Feed</h3>
+                <div class="image-container">
+                    <img id="cameraFeed" src="" alt="Camera feed will appear here" />
+                </div>
+                <div class="info-text">
+                    <small>Image size: <span id="imageSizeInfo">-</span></small>
+                </div>
+            </div>
+
+            <!-- Top Right: Controls and Sliders -->
+            <div class="panel top-right">
+                <div class="control-section">
+                    <h3>Image Input</h3>
+                    <button class="btn btn-primary" id="captureBtn">📷 Capture Frame</button>
+                    <button class="btn btn-primary" id="loadImageBtn">📁 Load Image</button>
+                    <input type="file" id="fileInput" accept="image/*" style="display:none;">
+                </div>
+
+                <div class="control-section">
+                    <h3>Processing Controls</h3>
+                    <button class="btn btn-secondary" id="processBtn">⚙️ Process Frame</button>
+                </div>
+
+                <div class="control-section">
+                    <h3>G-Code & Alignment</h3>
+                    <button class="btn btn-secondary" id="loadGcodeBtn">📄 Load G-Code</button>
+                    <button class="btn btn-success" id="alignToolpathBtn">🎯 Align Toolpath</button>
+                    <input type="file" id="gcodeInput" accept=".gcode,.ngc,.txt" style="display:none;">
+                </div>
+
+                <div class="control-section">
+                    <h3>CV2 Parameters</h3>
+                    <div class="slider-group">
+                        <label>Blur (kernel size): <span id="blurValue">5</span></label>
+                        <input type="range" id="blurSlider" min="1" max="51" step="2" value="5">
+                    </div>
+
+                    <div class="slider-group">
+                        <label>Threshold 1: <span id="threshold1Value">100</span></label>
+                        <input type="range" id="threshold1Slider" min="0" max="255" value="100">
+                    </div>
+
+                    <div class="slider-group">
+                        <label>Threshold 2: <span id="threshold2Value">200</span></label>
+                        <input type="range" id="threshold2Slider" min="0" max="255" value="200">
+                    </div>
+
+                    <div class="slider-group">
+                        <label>Brightness: <span id="brightnessValue">0</span></label>
+                        <input type="range" id="brightnessSlider" min="-100" max="100" value="0">
+                    </div>
+
+                    <div class="slider-group">
+                        <label>Contrast: <span id="contrastValue">1.0</span></label>
+                        <input type="range" id="contrastSlider" min="0.5" max="3" step="0.1" value="1.0">
+                    </div>
+
+                    <div class="slider-group">
+                        <label>Distortion K1: <span id="distortionK1Value">0.0</span></label>
+                        <input type="range" id="distortionK1Slider" min="-0.5" max="0.5" step="0.01" value="0.0">
+                    </div>
+
+                    <div class="slider-group">
+                        <label>Distortion K2: <span id="distortionK2Value">0.0</span></label>
+                        <input type="range" id="distortionK2Slider" min="-0.5" max="0.5" step="0.01" value="0.0">
+                    </div>
+                </div>
+
+                <div class="control-section">
+                    <h3>ROI Settings</h3>
+                    <div class="slider-group">
+                        <label>ROI X: <span id="roiXValue">0</span></label>
+                        <input type="range" id="roiXSlider" min="0" max="1920" value="0">
+                    </div>
+
+                    <div class="slider-group">
+                        <label>ROI Y: <span id="roiYValue">0</span></label>
+                        <input type="range" id="roiYSlider" min="0" max="1080" value="0">
+                    </div>
+
+                    <div class="slider-group">
+                        <label>ROI Width: <span id="roiWidthValue">640</span></label>
+                        <input type="range" id="roiWidthSlider" min="100" max="1920" value="640">
+                    </div>
+
+                    <div class="slider-group">
+                        <label>ROI Height: <span id="roiHeightValue">480</span></label>
+                        <input type="range" id="roiHeightSlider" min="100" max="1080" value="480">
+                    </div>
+                </div>
+
+                <div class="control-section">
+                    <h3>Calibration (mm)</h3>
+                    <div class="input-group">
+                        <label>Object Width (mm): <input type="number" id="calibWidthMm" value="100" min="1" step="0.1"></label>
+                    </div>
+                    <div class="input-group">
+                        <label>Object Length (mm): <input type="number" id="calibLengthMm" value="200" min="1" step="0.1"></label>
+                    </div>
+                </div>
+
+                <div class="control-section">
+                    <h3>Calibration (px)</h3>
+                    <div class="input-group">
+                        <label>Object Width (px): <input type="number" id="calibWidthPx" value="50" min="1"></label>
+                    </div>
+                    <div class="input-group">
+                        <label>Object Length (px): <input type="number" id="calibLengthPx" value="100" min="1"></label>
+                    </div>
+                </div>
+
+                <div class="control-section">
+                    <h3>Settings Management</h3>
+                    <button class="btn btn-info" id="saveSettingsBtn">💾 Save Settings</button>
+                    <button class="btn btn-info" id="loadSettingsBtn">📂 Load Settings</button>
+                    <button class="btn btn-warning" id="resetSettingsBtn">🔄 Reset to Defaults</button>
+                </div>
+            </div>
+
+            <!-- Middle Left: ROI Display -->
+            <div class="panel middle-left">
+                <h3>Region of Interest (ROI)</h3>
+                <div class="image-container">
+                    <img id="roiImage" src="" alt="ROI will appear here" />
+                </div>
+            </div>
+
+            <!-- Middle Right: Contours Display -->
+            <div class="panel middle-right">
+                <h3>Detected Board Contours</h3>
+                <div class="image-container">
+                    <img id="contoursImage" src="" alt="Contours will appear here" />
+                </div>
+                <div class="info-text" id="contoursInfo">
+                    <small>Contours info will appear here</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status bar -->
+        <footer>
+            <div id="statusMessage" class="status-info">Ready</div>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
